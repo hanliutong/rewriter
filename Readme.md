@@ -27,7 +27,11 @@ void vadd(float *a, float *b, float *c, size_t n) {
 | ---------------------- | ------------------ | ------------------ |
 | v_type::nlanes            | √                  | √                  |
 | v_type::nlanes (constant) | only as array size | only as array size |
-| overloaded operator    |                    |                    |
+| overloaded operator    | √                  | √                  |
+| v_type::lane_type      |                    |                    |
+| get0()                 |                    |                    |
+| v_extract_n            |                    |                    |
+| v_broadcast_element    |                    |                    |
 | ...                    |                    |                    |
 
 
