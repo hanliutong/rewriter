@@ -10,13 +10,26 @@ NlanesCheck::NlanesCheck(StringRef name, ClangTidyContext *context)
 void NlanesCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
   finder->addMatcher(
-      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))), unless(hasAncestor(varDecl(hasType(arrayType()))))).bind("x"), this);
+      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))),
+                  unless(hasAncestor(varDecl(anyOf(
+                      hasType(arrayType()),
+                      hasType(isConstQualified()))))))
+          .bind("x"),
+      this);
   finder->addMatcher(
-      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))), hasAncestor(varDecl(hasType(arrayType())))).bind("array"), this);
+      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))),
+                  hasAncestor(varDecl(hasType(arrayType()))))
+          .bind("constant"),
+      this);
+  finder->addMatcher(
+      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))),
+                  hasAncestor(varDecl(hasType(isConstQualified()))))
+          .bind("constant"),
+      this);
 }
 void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   const DeclRefExpr *matchedExpr = result.Nodes.getNodeAs<DeclRefExpr>("x");
-  const DeclRefExpr *arrayNlanes = result.Nodes.getNodeAs<DeclRefExpr>("array");
+  const DeclRefExpr *constantNlanes = result.Nodes.getNodeAs<DeclRefExpr>("constant");
 
   if (matchedExpr && matchedExpr->getNameInfo().getAsString().compare("nlanes") == 0) {
     const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(matchedExpr->getDecl()->getDeclContext()->getParent());
@@ -39,19 +52,19 @@ void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
     }
   }
 
-  if (arrayNlanes && arrayNlanes->getNameInfo().getAsString().compare("nlanes") == 0) {
-    const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(arrayNlanes->getDecl()->getDeclContext()->getParent());
+  if (constantNlanes && constantNlanes->getNameInfo().getAsString().compare("nlanes") == 0) {
+    const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(constantNlanes->getDecl()->getDeclContext()->getParent());
     if (vecStructDecl && vecStructDecl->getName().starts_with("v_")) {  // v_type::nlanes
       SourceManager &SM = result.Context->getSourceManager();
-      arrayNlanes->getSourceRange().dump(SM);
+      constantNlanes->getSourceRange().dump(SM);
       std::string vecTypeName =  // get vector type from source code
           clang::Lexer::getSourceText(
               CharSourceRange::getTokenRange(
-                  result.Context->getFullLoc(arrayNlanes->getBeginLoc())),
+                  result.Context->getFullLoc(constantNlanes->getBeginLoc())),
               SM, result.Context->getLangOpts())
               .str();
-      diag(arrayNlanes->getLocation(), "Found nlanes as array size.")
-          << FixItHint::CreateReplacement(arrayNlanes->getSourceRange(),
+      diag(constantNlanes->getLocation(), "Found nlanes as constant.")
+          << FixItHint::CreateReplacement(constantNlanes->getSourceRange(),
                                           "VTraits<" + vecTypeName + ">::max_nlanes");
     }
   }

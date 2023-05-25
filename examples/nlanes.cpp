@@ -2,7 +2,7 @@
 
 namespace cv {
 
-// #if CV_SIMD
+#if CV_SIMD
 void vadd(float *a, float *b, float *c, size_t n);
 
 class test {
@@ -26,6 +26,10 @@ void vadd(float *a, float *b, float *c, size_t n) {
   float ArrayDef3[test::nlanes];  // should NOT be matched
   (void)ArrayDef3;
 
+  const int VECSZ = v_float32::nlanes;  // VTraits<v_Ty>::max_nlanes (A constant)
+  float ArrayDef4[2 * VECSZ];
+  (void)ArrayDef4;
+
   int usage0 = v_float32::nlanes + (short)v_int8::nlanes;  // VTraits<v_Ty>::vlanes()
   (void)usage0;
 
@@ -33,13 +37,13 @@ void vadd(float *a, float *b, float *c, size_t n) {
   (void)usage1;
 
   for (size_t i = 0; i < n; i += v_float32::nlanes) {  // VTraits<v_Ty>::vlanes()
-    v_float32 va = v_load(a + i);
-    v_float32 vb = v_load(b + i);
+    v_float32 va = vx_load(a + i);
+    v_float32 vb = vx_load(b + i);
     v_float32 vc = v_add(va, vb);
     v_store(c, vc);
   }
 }
 
-// #endif // CV_SIMD
+#endif  // CV_SIMD
 
 }  // namespace cv
