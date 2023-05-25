@@ -6,6 +6,7 @@ find_package(Clang REQUIRED)
 
 add_library(ocv_intrinsic_tidy MODULE module.cpp
     checks/nlanes_check.cpp
+    checks/operator_check.cpp
 )
 
 include_directories(${LLVM_INCLUDE_DIRS})

@@ -2,6 +2,7 @@
 #include <clang-tidy/ClangTidyModuleRegistry.h>
 
 #include "checks/nlanes_check.hpp"
+#include "checks/operator_check.hpp"
 
 namespace clang::tidy {
 
@@ -9,6 +10,7 @@ class OCVModule : public ClangTidyModule {
  public:
   void addCheckFactories(ClangTidyCheckFactories& checkFactories) override {
     checkFactories.registerCheck<NlanesCheck>("nlanes-check");
+    checkFactories.registerCheck<OperatorCheck>("operator-check");
   }
 };
 
