@@ -115,10 +115,11 @@ std::string OperatorCheck::rewriteExpr(const Expr *expr, ASTContext *context) {
     }  // switch
 
     if (opExpr->isAssignmentOp()) {  // "res += a;" -> "res = v_add(res, a);"
-      result += rewriteExpr(opExpr->getArg(0)->IgnoreCasts(), context);
+      std::string leftSrc = rewriteExpr(opExpr->getArg(0)->IgnoreCasts(), context);
+      result += leftSrc;
       result += ", ";
       result += rewriteExpr(opExpr->getArg(1)->IgnoreCasts(), context);
-      result = "res = " + result + ")";
+      result = leftSrc + " = " + result + ")";
     } else {  // "res = a + b;" -> "res = v_add(a, b);"
       result += rewriteExpr(opExpr->getArg(0)->IgnoreCasts(), context);
       result += ", ";
