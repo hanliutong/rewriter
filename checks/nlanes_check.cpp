@@ -9,29 +9,31 @@ NlanesCheck::NlanesCheck(StringRef name, ClangTidyContext *context)
 
 void NlanesCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
-  finder->addMatcher(
-      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))),
-                  unless(hasAncestor(varDecl(anyOf(
-                      hasType(arrayType()),
-                      hasType(isConstQualified()))))))
-          .bind("x"),
-      this);
-  finder->addMatcher(
-      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))),
-                  hasAncestor(varDecl(hasType(arrayType()))))
-          .bind("constant"),
-      this);
-  finder->addMatcher(
-      declRefExpr(isExpansionInMainFile(), hasDeclaration(namedDecl(hasName("nlanes"))),
-                  hasAncestor(varDecl(hasType(isConstQualified()))))
-          .bind("constant"),
-      this);
+  auto arrSizeMatcher = declRefExpr(isExpansionInMainFile(),
+                                    hasDeclaration(namedDecl(hasName("nlanes"))),
+                                    hasAncestor(varDecl(hasType(arrayType()))))
+                            .bind("constant");
+  auto refForArrSizeMatcher = decl(isExpansionInMainFile(),
+                                   hasDescendant(varDecl(hasInitializer(ignoringImpCasts(
+                                                             declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("constant"))))
+                                                     .bind("cVar")),
+                                   hasDescendant(varDecl(hasType(arrayType()),
+                                                         hasDescendant(declRefExpr(to(equalsBoundNode("cVar")))))));
+  auto othersNlanesMatcher = declRefExpr(isExpansionInMainFile(),
+                                         hasDeclaration(namedDecl(hasName("nlanes"))))
+                                 .bind("x");
+
+  finder->addMatcher(arrSizeMatcher, this);
+  finder->addMatcher(refForArrSizeMatcher, this);
+  finder->addMatcher(othersNlanesMatcher, this);
 }
+
 void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   const DeclRefExpr *matchedExpr = result.Nodes.getNodeAs<DeclRefExpr>("x");
   const DeclRefExpr *constantNlanes = result.Nodes.getNodeAs<DeclRefExpr>("constant");
 
-  if (matchedExpr && matchedExpr->getNameInfo().getAsString().compare("nlanes") == 0) {
+  if (matchedExpr && matchedExpr->getNameInfo().getAsString().compare("nlanes") == 0 &&
+      constNlanes.find(matchedExpr) == constNlanes.end()) {
     const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(matchedExpr->getDecl()->getDeclContext()->getParent());
     if (vecStructDecl && vecStructDecl->getName().starts_with("v_")) {  // v_type::nlanes
       SourceManager &SM = result.Context->getSourceManager();
@@ -53,6 +55,7 @@ void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   }
 
   if (constantNlanes && constantNlanes->getNameInfo().getAsString().compare("nlanes") == 0) {
+    constNlanes.insert(constantNlanes);
     const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(constantNlanes->getDecl()->getDeclContext()->getParent());
     if (vecStructDecl && vecStructDecl->getName().starts_with("v_")) {  // v_type::nlanes
       SourceManager &SM = result.Context->getSourceManager();

@@ -36,12 +36,15 @@ void vadd(float *a, float *b, float *c, size_t n) {
   float usage1 = ArrayDef0[v_int64::nlanes - 1];  // VTraits<v_Ty>::vlanes()
   (void)usage1;
 
-  for (size_t i = 0; i < n; i += v_float32::nlanes) {  // VTraits<v_Ty>::vlanes()
+  const int width = v_float32::nlanes;  // VTraits<v_Ty>::vlanes()
+  for (size_t i = 0; i < n; i += width) {
     v_float32 va = vx_load(a + i);
     v_float32 vb = vx_load(b + i);
     v_float32 vc = v_add(va, vb);
     v_store(c, vc);
   }
+  int width_ = v_float32::nlanes;  // VTraits<v_Ty>::vlanes()
+  (void)width_;
 }
 
 #endif  // CV_SIMD

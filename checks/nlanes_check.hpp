@@ -10,6 +10,9 @@ class NlanesCheck : public ClangTidyCheck {
   NlanesCheck(StringRef name, ClangTidyContext* context);
   void registerMatchers(ast_matchers::MatchFinder* finder) override;
   void check(const ast_matchers::MatchFinder::MatchResult& result) override;
+
+ private:
+  std::set<const DeclRefExpr*> constNlanes;
 };
 
 }  // namespace clang::tidy
