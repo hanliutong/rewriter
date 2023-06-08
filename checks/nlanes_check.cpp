@@ -9,6 +9,14 @@ NlanesCheck::NlanesCheck(StringRef name, ClangTidyContext *context)
 
 void NlanesCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
+  auto broadcastCall = callExpr(isExpansionInMainFile(),
+                                callee(functionDecl(hasName("v_broadcast_element")).bind("funcDecl")),
+                                hasDescendant(declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("nlanesInTemplate")))
+                           .bind("funcCall");
+  auto extractCall = callExpr(isExpansionInMainFile(),
+                              callee(functionDecl(hasName("v_extract_n")).bind("funcDecl")),
+                              hasDescendant(declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("nlanesInTemplate")))
+                         .bind("funcCall");
   auto arrSizeMatcher = declRefExpr(isExpansionInMainFile(),
                                     hasDeclaration(namedDecl(hasName("nlanes"))),
                                     hasAncestor(varDecl(hasType(arrayType()))))
@@ -23,6 +31,8 @@ void NlanesCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
                                          hasDeclaration(namedDecl(hasName("nlanes"))))
                                  .bind("x");
 
+  finder->addMatcher(broadcastCall, this);
+  finder->addMatcher(extractCall, this);
   finder->addMatcher(arrSizeMatcher, this);
   finder->addMatcher(refForArrSizeMatcher, this);
   finder->addMatcher(othersNlanesMatcher, this);
@@ -31,9 +41,12 @@ void NlanesCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
 void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   const DeclRefExpr *matchedExpr = result.Nodes.getNodeAs<DeclRefExpr>("x");
   const DeclRefExpr *constantNlanes = result.Nodes.getNodeAs<DeclRefExpr>("constant");
+  const DeclRefExpr *nlanesRefInTemplate = result.Nodes.getNodeAs<DeclRefExpr>("nlanesInTemplate");
+  const FunctionDecl *funcDecl = result.Nodes.getNodeAs<FunctionDecl>("funcDecl");
+  const CallExpr *callExpr = result.Nodes.getNodeAs<CallExpr>("funcCall");
 
   if (matchedExpr && matchedExpr->getNameInfo().getAsString().compare("nlanes") == 0 &&
-      constNlanes.find(matchedExpr) == constNlanes.end()) {
+      processedNlanes.find(matchedExpr) == processedNlanes.end()) {
     const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(matchedExpr->getDecl()->getDeclContext()->getParent());
     if (vecStructDecl && vecStructDecl->getName().starts_with("v_")) {  // v_type::nlanes
       SourceManager &SM = result.Context->getSourceManager();
@@ -55,7 +68,7 @@ void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   }
 
   if (constantNlanes && constantNlanes->getNameInfo().getAsString().compare("nlanes") == 0) {
-    constNlanes.insert(constantNlanes);
+    processedNlanes.insert(constantNlanes);
     const auto *vecStructDecl = dyn_cast<CXXRecordDecl>(constantNlanes->getDecl()->getDeclContext()->getParent());
     if (vecStructDecl && vecStructDecl->getName().starts_with("v_")) {  // v_type::nlanes
       SourceManager &SM = result.Context->getSourceManager();
@@ -70,6 +83,36 @@ void NlanesCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
           << FixItHint::CreateReplacement(constantNlanes->getSourceRange(),
                                           "VTraits<" + vecTypeName + ">::max_nlanes");
     }
+  }
+
+  if (callExpr && funcDecl && nlanesRefInTemplate) {
+    processedNlanes.insert(nlanesRefInTemplate);
+    if (auto nlanesDecl = dyn_cast<EnumConstantDecl>(nlanesRefInTemplate->getDecl())) {
+      if (auto nlanesExpr = dyn_cast<IntegerLiteral>(nlanesDecl->getInitExpr()->IgnoreCasts())) {
+        if (nlanesExpr->getValue().getSExtValue() - 1 ==
+            funcDecl->getTemplateSpecializationArgs()->get(0).getAsIntegral().getExtValue()) {
+          std::string arg0ExprStr = Lexer::getSourceText(
+                                        CharSourceRange::getTokenRange(callExpr->getArg(0)->getSourceRange()),
+                                        *result.SourceManager, result.Context->getLangOpts())
+                                        .str();
+          std::string replaceFuncStr;
+          if (funcDecl->getNameAsString().compare("v_broadcast_element") == 0)
+            replaceFuncStr = "v_broadcast_highest(";
+          else if (funcDecl->getNameAsString().compare("v_extract_n") == 0)
+            replaceFuncStr = "v_extract_highest(";
+          else
+            assert(0 && "more functions?");
+
+          diag(nlanesRefInTemplate->getLocation(), "Found nlanes as template argument")
+              << FixItHint::CreateReplacement(callExpr->getSourceRange(),
+                                              replaceFuncStr + arg0ExprStr + ")");
+        } else {  // not <::nlanes - 1>
+          diag(nlanesRefInTemplate->getLocation(),
+               "Found nlanes as template argument, but no function can replace it.",
+               DiagnosticIDs::Error);
+        }
+      }
+    }  // nlanes is not declared as an enum constant, aka not in the (original) Universal Intrinsic Type.
   }
 }
 

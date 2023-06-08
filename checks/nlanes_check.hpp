@@ -12,7 +12,7 @@ class NlanesCheck : public ClangTidyCheck {
   void check(const ast_matchers::MatchFinder::MatchResult& result) override;
 
  private:
-  std::set<const DeclRefExpr*> constNlanes;
+  std::set<const DeclRefExpr*> processedNlanes;
 };
 
 }  // namespace clang::tidy

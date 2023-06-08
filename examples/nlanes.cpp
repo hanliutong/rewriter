@@ -47,6 +47,21 @@ void vadd(float *a, float *b, float *c, size_t n) {
   (void)width_;
 }
 
+void testFunctionCall(const int *ptr, const v_uint32 &v0) {
+  v_int32 v1 = vx_load(ptr);
+  int x0 = v_extract_n<1>(v1);                                  // should NOT be matched
+  int x1 = v_extract_n<v_int32::nlanes - 1>(v1);                // v_extract_highest
+  int x2 = v_extract_n<v_int32::nlanes - 2>(v1);                //  throw an error
+  v_uint32 v2 = v_broadcast_element<0>(v0);                     // should NOT be matched
+  v_uint32 v3 = v_broadcast_element<v_uint32::nlanes - 1>(v0);  // v_broadcast_highest
+  v_uint32 v4 = v_broadcast_element<v_uint32::nlanes - 2>(v0);  //  throw an error
+  (void)x0;
+  (void)x1;
+  (void)x2;
+  (void)v1;
+  (void)v2;
+  (void)v3;
+}
 #endif  // CV_SIMD
 
 }  // namespace cv

@@ -30,8 +30,8 @@ void vadd(float *a, float *b, float *c, size_t n) {
 | overloaded operator    | √                  | √                  |
 | v_type::lane_type      |                    |                    |
 | get0()                 | √                  | √                  |
-| v_extract_n            |                    |                    |
-| v_broadcast_element    |                    |                    |
+| v_extract_n            | √                  | √                  |
+| v_broadcast_element    | √                  | √                  |
 | ...                    |                    |                    |
 
 
