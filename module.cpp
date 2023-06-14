@@ -2,6 +2,7 @@
 #include <clang-tidy/ClangTidyModuleRegistry.h>
 
 #include "checks/get0_check.hpp"
+#include "checks/lanetype_check.hpp"
 #include "checks/nlanes_check.hpp"
 #include "checks/operator_check.hpp"
 
@@ -13,6 +14,7 @@ class OCVModule : public ClangTidyModule {
     checkFactories.registerCheck<NlanesCheck>("nlanes-check");
     checkFactories.registerCheck<OperatorCheck>("operator-check");
     checkFactories.registerCheck<Get0Check>("get0-check");
+    checkFactories.registerCheck<LaneTypeCheck>("lanetype-check");
   }
 };
 
