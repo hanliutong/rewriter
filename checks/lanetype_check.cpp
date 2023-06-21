@@ -13,11 +13,55 @@ void LaneTypeCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
       varDecl(hasType(arrayType(hasElementType(qualType(hasDeclaration(typedefDecl(hasName("lane_type"), hasParent(recordDecl())))))))).bind("var"), this);
   finder->addMatcher(
       varDecl(hasType(qualType(hasDeclaration(typedefDecl(hasName("lane_type"), hasParent(recordDecl())))))).bind("var"), this);
+
+  finder->addMatcher(
+      typedefDecl(isExpansionInMainFile(),
+                  hasType(elaboratedType(hasQualifier(nestedNameSpecifier())).bind("contextType")))
+          .bind("typedefDecl"),
+      this);
 }
 
 void LaneTypeCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   const auto *var = result.Nodes.getNodeAs<VarDecl>("var");
-  // const auto *vType = result.Nodes.getNodeAs<RecordDecl>("vType");
+  const auto *typedefDecl = result.Nodes.getNodeAs<TypedefDecl>("typedefDecl");
+  const auto *contextType = result.Nodes.getNodeAs<ElaboratedType>("contextType");
+
+  if (typedefDecl && contextType) {
+    auto *td = contextType->getAs<TypedefType>();
+    if (td && td->getDecl()->getNameAsString().compare("lane_type") == 0) {
+      std::string typedefDeclStr = Lexer::getSourceText(CharSourceRange::getTokenRange(typedefDecl->getSourceRange()),
+                                                        *result.SourceManager, result.Context->getLangOpts())
+                                       .str();
+      if (auto *templateParmType = contextType->getQualifier()->getAsType()->getAs<SubstTemplateTypeParmType>()) {
+        std::string parmStr = templateParmType->getReplacedParameter()->getNameAsString();
+        std::string replacement = "VTraits<" + parmStr + ">";
+        typedefDeclStr.replace(typedefDeclStr.find(parmStr), parmStr.length(), replacement);
+        diag(typedefDecl->getLocation(), "Found lane_type as typedef")
+            << FixItHint::CreateReplacement(typedefDecl->getSourceRange(), typedefDeclStr);
+      } else if (auto *recordType = contextType->getQualifier()->getAsType()->getAs<RecordType>()) {
+        std::string typedefDeclStr = Lexer::getSourceText(CharSourceRange::getTokenRange(typedefDecl->getSourceRange()),
+                                                          *result.SourceManager, result.Context->getLangOpts())
+                                         .str();
+        std::string typeStr = Lexer::getSourceText(CharSourceRange::getTokenRange(typedefDecl->getTypeSourceInfo()->getTypeLoc().getSourceRange()),
+                                                   *result.SourceManager, result.Context->getLangOpts())
+                                  .str();
+        // Remove "::lane_type" and "typename " from typeName
+        auto pos_lane_type = typeStr.find("::lane_type");
+        auto pos_typename = typeStr.find("typename ");
+        if (pos_lane_type != std::string::npos) {
+          typeStr.erase(pos_lane_type, std::strlen("::lane_type"));
+        }
+        if (pos_typename != std::string::npos) {
+          typeStr.erase(pos_typename, std::strlen("typename "));
+        }
+        std::string replacement = "VTraits<" + typeStr + ">";
+        typedefDeclStr.replace(typedefDeclStr.find(typeStr), typeStr.length(), replacement);
+        diag(typedefDecl->getLocation(), "Found lane_type as typedef")
+            << FixItHint::CreateReplacement(typedefDecl->getSourceRange(), typedefDeclStr);
+      }
+    }
+  }
+
   if (var) {
     auto typeLoc = var->getTypeSourceInfo()->getTypeLoc();
     std::string typeName;
