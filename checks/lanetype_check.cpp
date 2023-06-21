@@ -11,20 +11,37 @@ void LaneTypeCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
   finder->addMatcher(
       varDecl(hasType(arrayType(hasElementType(qualType(hasDeclaration(typedefDecl(hasName("lane_type"), hasParent(recordDecl())))))))).bind("var"), this);
+
   finder->addMatcher(
       varDecl(hasType(qualType(hasDeclaration(typedefDecl(hasName("lane_type"), hasParent(recordDecl())))))).bind("var"), this);
 
   finder->addMatcher(
-      typedefDecl(isExpansionInMainFile(),
-                  hasType(elaboratedType(hasQualifier(nestedNameSpecifier())).bind("contextType")))
-          .bind("typedefDecl"),
-      this);
+      varDecl(isExpansionInMainFile(), hasDescendant(callExpr(hasDescendant(unresolvedLookupExpr().bind("lookup"))))), this);
+
+  finder->addMatcher(
+      typedefDecl(isExpansionInMainFile(), hasType(elaboratedType(hasQualifier(nestedNameSpecifier())).bind("contextType"))).bind("typedefDecl"), this);
 }
 
 void LaneTypeCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   const auto *var = result.Nodes.getNodeAs<VarDecl>("var");
   const auto *typedefDecl = result.Nodes.getNodeAs<TypedefDecl>("typedefDecl");
   const auto *contextType = result.Nodes.getNodeAs<ElaboratedType>("contextType");
+  const auto *unresolvedLookupExpr = result.Nodes.getNodeAs<UnresolvedLookupExpr>("lookup");
+  if (unresolvedLookupExpr &&
+      unresolvedLookupExpr->getTemplateArgs() &&
+      unresolvedLookupExpr->getTemplateArgs()->getArgument().isNull() == false &&
+      unresolvedLookupExpr->getTemplateArgs()->getArgument().getKind() ==
+          TemplateArgument::ArgKind::Type) {
+    auto typeStr = unresolvedLookupExpr->getTemplateArgs()->getArgument().getAsType().getUnqualifiedType().getAsString();
+    auto pos_lane_type = typeStr.find("::lane_type");
+    if (pos_lane_type != std::string::npos) {
+      typeStr.insert(pos_lane_type, ">");
+      auto pos_typename = typeStr.find("typename ");
+      typeStr.insert(pos_typename == std::string::npos ? 0 : pos_typename + std::strlen("typename "), "VTraits<");
+      diag(unresolvedLookupExpr->getTemplateArgs()->getLocation(), "Found lane_type as template parameter")
+          << FixItHint::CreateReplacement(unresolvedLookupExpr->getTemplateArgs()->getSourceRange(), typeStr);
+    }
+  }
 
   if (typedefDecl && contextType) {
     auto *td = contextType->getAs<TypedefType>();

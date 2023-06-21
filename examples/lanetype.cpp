@@ -27,18 +27,19 @@ struct zero_vec_type_of<short> {
 };
 template <typename SRC>
 int div_simd_common(const SRC in1[]) {
-  zero_vec_type_of_t<SRC> v_zero = vx_setall<typename zero_vec_type_of_t<SRC>::lane_type>(0);
+  // in file opencv/modules/core/src/arithm.simd.hpp
+  zero_vec_type_of_t<SRC> v_zero = vx_setall<typename zero_vec_type_of_t<SRC>::lane_type>(0);  // FIX: typename VTraits<zero_vec_type_of_t<SRC>>::lane_type>(0)
 }
 int div_simd_common(const short in1[]);
 int div_simd_common(const ushort in1[]);
 
 template <typename _Tdvec>
 static inline void vx_load_pair_as(const double* ptr, _Tdvec& a, _Tdvec& b) {
-  // opencv/modules/imgproc/src/morph.simd.hpp
-  typedef typename _Tdvec::lane_type template_stype;  // typedef typename VTraits<_Tdvec>::lane_type template_stype;
+  // in file opencv/modules/imgproc/src/morph.simd.hpp
+  typedef typename _Tdvec::lane_type template_stype;  // FIX: typedef typename VTraits<_Tdvec>::lane_type template_stype;
   const int VECSZ = _Tdvec::nlanes;
-  // opencv/modules/core/src/convert.hpp
-  typename _Tdvec::lane_type buf[VECSZ * 2];
+  // in file opencv/modules/core/src/convert.hpp
+  typename _Tdvec::lane_type buf[VECSZ * 2];  // FIX: typename VTraits<_Tdvec>::lane_type buf[VECSZ * 2];
 
   buf[0] = saturate_cast<typename _Tdvec::lane_type>(ptr[0]);
 }
