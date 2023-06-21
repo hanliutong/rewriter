@@ -23,15 +23,15 @@ void vadd(float *a, float *b, float *c, size_t n) {
 
 ## Capability
 
-| Code usage             | Match              | Fix                |
+| Code usage             | Match and Fix      |  Checks            |
 | ---------------------- | ------------------ | ------------------ |
-| v_type::nlanes            | √                  | √                  |
-| v_type::nlanes (constant) | only as array size | only as array size |
-| overloaded operator    | √                  | √                  |
-| v_type::lane_type      | √                  | √                  |
-| get0()                 | √                  | √                  |
-| v_extract_n            | √                  | √                  |
-| v_broadcast_element    | √                  | √                  |
+| v_type::nlanes            | √                  | nlanes-check    |
+| v_type::nlanes (constant) | only as array size | nlanes-check    |
+| overloaded operator    | √                  | operator-check     |
+| v_type::lane_type      | √                  | lane_type-check    |
+| get0()                 | √                  | get0-check         |
+| v_extract_n            | √                  | nlanes-check       |
+| v_broadcast_element    | √                  | nlanes-check       |
 | ...                    |                    |                    |
 
 
