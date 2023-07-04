@@ -25,13 +25,13 @@ void vadd(float *a, float *b, float *c, size_t n) {
 
 | Code usage             | Match and Fix      |  Checks            |
 | ---------------------- | ------------------ | ------------------ |
-| v_type::nlanes            | √                  | nlanes-check    |
-| v_type::nlanes (constant) | only as array size | nlanes-check    |
-| overloaded operator    | √                  | operator-check     |
-| v_type::lane_type      | √                  | lane_type-check    |
-| get0()                 | √                  | get0-check         |
-| v_extract_n            | √                  | nlanes-check       |
-| v_broadcast_element    | √                  | nlanes-check       |
+| v_type::nlanes            | √                  | opencv-dev-intrin-nlanes    |
+| v_type::nlanes (constant) | only as array size | opencv-dev-intrin-nlanes    |
+| overloaded operator    | √                  | opencv-dev-intrin-operator     |
+| v_type::lane_type      | √                  | opencv-dev-intrin-lanetype    |
+| get0()                 | √                  | opencv-dev-intrin-get0         |
+| v_extract_n            | √                  | opencv-dev-intrin-nlanes       |
+| v_broadcast_element    | √                  | opencv-dev-intrin-nlanes       |
 | ...                    |                    |                    |
 
 
@@ -49,8 +49,8 @@ cmake .. -G Ninja -DClang_DIR=<LLVM build directory>/lib/cmake/clang
 ninja
 
 # run
-<LLVM build directory>/bin/clang-tidy --load ./build/libocv_intrinsic_tidy.so '--checks=-*,nlanes-check' -p <OpenCV build directory> ../examples/nlanes.cpp
+<LLVM build directory>/bin/clang-tidy --load ./build/libocv_intrinsic_tidy.so opencv-dev-intrin-'--checks=-*,opencv-dev-intrin-*' -p <OpenCV build directory> ../examples/nlanes.cpp
 
 # run and rewrite
-<LLVM build directory>/bin/clang-tidy --load ./build/libocv_intrinsic_tidy.so '--checks=-*,nlanes-check' -p <OpenCV build directory> ../examples/nlanes.cpp -fix
+<LLVM build directory>/bin/clang-tidy --load ./build/libocv_intrinsic_tidy.so opencv-dev-intrin-'--checks=-*,opencv-dev-intrin-*' -p <OpenCV build directory> ../examples/nlanes.cpp -fix
 ```

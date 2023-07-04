@@ -11,10 +11,10 @@ namespace clang::tidy {
 class OCVModule : public ClangTidyModule {
  public:
   void addCheckFactories(ClangTidyCheckFactories& checkFactories) override {
-    checkFactories.registerCheck<NlanesCheck>("nlanes-check");
-    checkFactories.registerCheck<OperatorCheck>("operator-check");
-    checkFactories.registerCheck<Get0Check>("get0-check");
-    checkFactories.registerCheck<LaneTypeCheck>("lanetype-check");
+    checkFactories.registerCheck<NlanesCheck>("opencv-dev-intrin-nlanes");
+    checkFactories.registerCheck<OperatorCheck>("opencv-dev-intrin-operator");
+    checkFactories.registerCheck<Get0Check>("opencv-dev-intrin-get0");
+    checkFactories.registerCheck<LaneTypeCheck>("opencv-dev-intrin-lanetype");
   }
 };
 
