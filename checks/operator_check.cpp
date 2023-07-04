@@ -13,8 +13,6 @@ void OperatorCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   finder->addMatcher(
       // match an overloaded operator
       cxxOperatorCallExpr(
-          // which is in the input file and
-          isExpansionInMainFile(),
           // has the child that references to
           hasDescendant(declRefExpr(to(
               // a variable with Universal Intrinsic type("v_xxx"), whatever declaration or reference.

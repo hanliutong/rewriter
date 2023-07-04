@@ -9,7 +9,7 @@ Get0Check::Get0Check(StringRef name, ClangTidyContext *context)
 
 void Get0Check::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
-  auto get0Call = cxxMemberCallExpr(isExpansionInMainFile(), on(hasType(namedDecl(matchesName("v_"))))).bind("call");
+  auto get0Call = cxxMemberCallExpr(on(hasType(namedDecl(matchesName("v_"))))).bind("call");
   finder->addMatcher(get0Call, this);
 }
 

@@ -16,10 +16,10 @@ void LaneTypeCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
       varDecl(hasType(qualType(hasDeclaration(typedefDecl(hasName("lane_type"), hasParent(recordDecl())))))).bind("var"), this);
 
   finder->addMatcher(
-      varDecl(isExpansionInMainFile(), hasDescendant(callExpr(hasDescendant(unresolvedLookupExpr().bind("lookup"))))), this);
+      varDecl(hasDescendant(callExpr(hasDescendant(unresolvedLookupExpr().bind("lookup"))))), this);
 
   finder->addMatcher(
-      typedefDecl(isExpansionInMainFile(), hasType(elaboratedType(hasQualifier(nestedNameSpecifier())).bind("contextType"))).bind("typedefDecl"), this);
+      typedefDecl(hasType(elaboratedType(hasQualifier(nestedNameSpecifier())).bind("contextType"))).bind("typedefDecl"), this);
 }
 
 void LaneTypeCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {

@@ -9,26 +9,26 @@ NlanesCheck::NlanesCheck(StringRef name, ClangTidyContext *context)
 
 void NlanesCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
-  auto broadcastCall = callExpr(isExpansionInMainFile(),
-                                callee(functionDecl(hasName("v_broadcast_element")).bind("funcDecl")),
-                                hasDescendant(declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("nlanesInTemplate")))
+  auto broadcastCall = callExpr(
+                           callee(functionDecl(hasName("v_broadcast_element")).bind("funcDecl")),
+                           hasDescendant(declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("nlanesInTemplate")))
                            .bind("funcCall");
-  auto extractCall = callExpr(isExpansionInMainFile(),
-                              callee(functionDecl(hasName("v_extract_n")).bind("funcDecl")),
-                              hasDescendant(declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("nlanesInTemplate")))
+  auto extractCall = callExpr(
+                         callee(functionDecl(hasName("v_extract_n")).bind("funcDecl")),
+                         hasDescendant(declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("nlanesInTemplate")))
                          .bind("funcCall");
-  auto arrSizeMatcher = declRefExpr(isExpansionInMainFile(),
-                                    hasDeclaration(namedDecl(hasName("nlanes"))),
-                                    hasAncestor(varDecl(hasType(arrayType()))))
+  auto arrSizeMatcher = declRefExpr(
+                            hasDeclaration(namedDecl(hasName("nlanes"))),
+                            hasAncestor(varDecl(hasType(arrayType()))))
                             .bind("constant");
-  auto refForArrSizeMatcher = decl(isExpansionInMainFile(),
-                                   hasDescendant(varDecl(hasInitializer(ignoringImpCasts(
-                                                             declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("constant"))))
-                                                     .bind("cVar")),
-                                   hasDescendant(varDecl(hasType(arrayType()),
-                                                         hasDescendant(declRefExpr(to(equalsBoundNode("cVar")))))));
-  auto othersNlanesMatcher = declRefExpr(isExpansionInMainFile(),
-                                         hasDeclaration(namedDecl(hasName("nlanes"))))
+  auto refForArrSizeMatcher = decl(
+      hasDescendant(varDecl(hasInitializer(ignoringImpCasts(
+                                declRefExpr(hasDeclaration(namedDecl(hasName("nlanes")))).bind("constant"))))
+                        .bind("cVar")),
+      hasDescendant(varDecl(hasType(arrayType()),
+                            hasDescendant(declRefExpr(to(equalsBoundNode("cVar")))))));
+  auto othersNlanesMatcher = declRefExpr(
+                                 hasDeclaration(namedDecl(hasName("nlanes"))))
                                  .bind("x");
 
   finder->addMatcher(broadcastCall, this);
