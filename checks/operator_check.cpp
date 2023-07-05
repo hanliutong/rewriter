@@ -16,8 +16,8 @@ void OperatorCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
           // has the child that references to
           hasDescendant(declRefExpr(to(
               // a variable with Universal Intrinsic type("v_xxx"), whatever declaration or reference.
-              varDecl(hasType(qualType(anyOf(hasDeclaration(namedDecl(matchesName("v_"))),
-                                             references(namedDecl(matchesName("v_")))))))))))
+              varDecl(hasType(qualType(anyOf(hasDeclaration(namedDecl(matchesName("v_(int|uint|float)[0-9]+"))),
+                                             references(namedDecl(matchesName("v_(int|uint|float)[0-9]+")))))))))))
           .bind("x"),
       this);
 }
