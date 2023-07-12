@@ -1,0 +1,13 @@
+./modules/dnn/src/int8layers/elementwise_layers.cpp
+./modules/dnn/src/int8layers/fully_connected_layer.cpp
+./modules/dnn/src/int8layers/convolution_layer.cpp
+./modules/dnn/src/int8layers/pooling_layer.cpp
+./modules/dnn/src/layers/elementwise_layers.cpp
+./modules/dnn/src/layers/fully_connected_layer.cpp
+./modules/dnn/src/layers/convolution_layer.cpp
+./modules/dnn/src/layers/batch_norm_layer.cpp
+./modules/dnn/src/layers/cpu_kernels/convolution.cpp
+./modules/dnn/src/layers/cpu_kernels/conv_winograd_f63.cpp
+./modules/dnn/src/layers/cpu_kernels/conv_depthwise.cpp
+./modules/dnn/src/layers/cpu_kernels/convolution.hpp
+./modules/dnn/src/layers/pooling_layer.cpp

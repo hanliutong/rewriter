@@ -1,0 +1,15 @@
+./modules/video/src/variational_refinement.cpp
+./modules/video/src/dis_flow.cpp
+./modules/video/src/lkpyramid.cpp
+./modules/video/src/optflowgf.cpp
+./modules/calib3d/src/stereobm.cpp
+./modules/calib3d/src/undistort.simd.hpp
+./modules/calib3d/src/stereosgbm.cpp
+./modules/objdetect/src/hog.cpp
+./modules/gapi/src/backends/fluid/gfluidcore_func.simd.hpp
+./modules/gapi/src/backends/fluid/gfluidcore.cpp
+./modules/gapi/src/backends/fluid/gfluidimgproc_func.simd.hpp
+./modules/gapi/src/backends/fluid/gfluidcore_func.dispatch.cpp
+./modules/features2d/src/fast_score.cpp
+./modules/features2d/src/fast.cpp
+./modules/features2d/src/sift.simd.hpp
