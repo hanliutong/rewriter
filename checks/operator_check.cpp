@@ -9,6 +9,7 @@ OperatorCheck::OperatorCheck(StringRef name, ClangTidyContext *context)
 
 void OperatorCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
   using namespace ast_matchers;
+  auto vecType = "v_(int|uint|float)[0-9]+";
   // match the overloaded operator in Unversal Intrinsc.
   finder->addMatcher(
       // match an overloaded operator
@@ -16,15 +17,31 @@ void OperatorCheck::registerMatchers(ast_matchers::MatchFinder *finder) {
           // has the child that references to
           hasDescendant(declRefExpr(to(
               // a variable with Universal Intrinsic type("v_xxx"), whatever declaration or reference.
-              varDecl(hasType(qualType(anyOf(hasDeclaration(namedDecl(matchesName("v_(int|uint|float)[0-9]+"))),
-                                             references(namedDecl(matchesName("v_(int|uint|float)[0-9]+")))))))))))
+              varDecl(hasType(qualType(anyOf(hasDeclaration(namedDecl(matchesName(vecType))),
+                                             references(namedDecl(matchesName(vecType))),
+                                             hasDeclaration(typedefDecl(isExpansionInMainFile()).bind("typedefDecl"))))))))))
           .bind("x"),
       this);
+  finder->addMatcher(cxxOperatorCallExpr(hasOperands(materializeTemporaryExpr().bind("op1"), materializeTemporaryExpr().bind("op2"))).bind("x"), this);
 }
 
 void OperatorCheck::check(const ast_matchers::MatchFinder::MatchResult &result) {
   const CXXOperatorCallExpr *matchedExpr = result.Nodes.getNodeAs<CXXOperatorCallExpr>("x");
+  const TypedefDecl *typedefDecl = result.Nodes.getNodeAs<TypedefDecl>("typedefDecl");
+  const MaterializeTemporaryExpr *op1 = result.Nodes.getNodeAs<MaterializeTemporaryExpr>("op1");
+  const MaterializeTemporaryExpr *op2 = result.Nodes.getNodeAs<MaterializeTemporaryExpr>("op2");
+  llvm::Regex regex("v_(int|uint|float)[0-9]+");
   if (matchedExpr && matchedExpr->getOperator() != OverloadedOperatorKind::OO_Equal) {
+    if (op1 && op2) {
+      if (regex.match(op1->getType().getUnqualifiedType().getAsString()) == false)
+        return;
+      if (regex.match(op2->getType().getUnqualifiedType().getAsString()) == false)
+        return;
+    }
+    if (typedefDecl) {
+      if (regex.match(typedefDecl->getUnderlyingType().getAsString()) == false)
+        return;
+    }
     std::string code = rewriteExpr(matchedExpr, result.Context);
     if (!code.empty()) {
       diag(matchedExpr->getExprLoc(), "Found operator.")
